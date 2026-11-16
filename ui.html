@@ -166,6 +166,7 @@ select{background:var(--bg);border:1px solid var(--bd);border-radius:10px;paddin
   <div class="row"><div class="l">Qualité<small>Plus haut = texte plus net, plus de donnees</small></div>
     <div class="seg" id="sQ"><button data-q="eco">Éco</button><button data-q="norm">Normale</button><button data-q="hd">HD</button></div></div>
   <div class="row"><div class="l">Confirmer avant chaque clic<small>Évite les clics accidentels</small></div><label class="sw"><input type="checkbox" id="sConf"><span></span></label></div>
+  <div class="row" id="rAuto" style="display:none"><div class="l">Lancer au démarrage du PC<small>L'agent démarre tout seul avec Windows</small></div><label class="sw"><input type="checkbox" id="sAuto"><span></span></label></div>
   <div class="row" id="rReset" style="display:none"><div class="l">PC connecté<small>Changer de PC ou refaire l'appairage</small></div><button class="k" id="bReset">Changer</button></div>
   <div class="foot" id="sInfo"></div>
 </div></div>
@@ -302,6 +303,8 @@ function segSet(){document.querySelectorAll('#sQ button').forEach(b=>b.classList
 document.querySelectorAll('#sQ button').forEach(b=>b.onclick=()=>{preset=b.dataset.q;ls.set('q',preset);segSet();hash='';idle=0});
 segSet(); $('sConf').checked=confirmClick;
 $('sConf').onchange=e=>{confirmClick=e.target.checked;ls.set('conf',confirmClick?'1':'0')};
+$('sAuto').onchange=async e=>{const on=e.target.checked;
+  if(await post('/api/autostart?on='+(on?1:0)))flash(on?'Démarrage auto activé':'Démarrage auto désactivé'); else e.target.checked=!on};
 $('sMon').onchange=e=>{mon=+e.target.value;ls.set('mon',mon);hash='';nw=0;pend=null;idle=0};
 if(window.Android&&Android.reset){$('rReset').style.display='flex';$('bReset').onclick=()=>Android.reset()}
 else if(window.CO_RELAY){$('rReset').style.display='flex';$('bReset').onclick=()=>{ls.set('ck','');location.href='/leave'}}
@@ -374,6 +377,7 @@ async function loadStatus(){
     if(mon>=status.mons.length)mon=0; s.value=mon;
     $('sInfo').textContent=`Agent v${status.ver}  -  `+(ro?'lecture seule  -  ':'')+(status.hooks?'hooks Claude Code actifs':'détection automatique');
     $('keys').style.opacity=ro?.45:1;
+    if(typeof status.autostart==='boolean'&&!ro){$('rAuto').style.display='flex';$('sAuto').checked=status.autostart}
   }catch(e){}
 }
 let started=false;
